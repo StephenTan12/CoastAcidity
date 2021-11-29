@@ -32,9 +32,11 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate {
         view.backgroundColor = .white
         
         searchBar = UISearchBar()
+        searchBar.barTintColor = .white
+        searchBar.searchTextField.textColor = .black
         searchBar.keyboardType = .numberPad
         searchBar.translatesAutoresizingMaskIntoConstraints = false
-        searchBar.placeholder = "Enter something here"
+        searchBar.placeholder = "Manually Enter Zipcode Here"
         view.addSubview(searchBar)
         
         mapView = MKMapView()
@@ -50,9 +52,9 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate {
             searchBar.leadingAnchor.constraint(equalTo: view.layoutMarginsGuide.leadingAnchor, constant: 30),
             searchBar.trailingAnchor.constraint(equalTo: view.layoutMarginsGuide.trailingAnchor, constant: -30),
             mapView.topAnchor.constraint(equalTo: searchBar.bottomAnchor, constant: 30),
-            mapView.leadingAnchor.constraint(equalTo: view.layoutMarginsGuide.leadingAnchor),
-            mapView.trailingAnchor.constraint(equalTo: view.layoutMarginsGuide.trailingAnchor),
-            mapView.bottomAnchor.constraint(equalTo: view.layoutMarginsGuide.bottomAnchor)
+            mapView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            mapView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            mapView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
         
         self.view = view
@@ -61,20 +63,72 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-//        let initialLocation = CLLocation(latitude: 32.888624, longitude: -117.241736)
-//
-//        mapView.centerToLocation(initialLocation)
+        let tap = UITapGestureRecognizer(target: self.view, action: #selector(UIView.endEditing))
+        view.addGestureRecognizer(tap)
+        
+        setupSearchBar()
         determineCurrentLocation()
+    }
+    
+    func setupSearchBar() {
+        let toolbar = UIToolbar()
+        let flexspace = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
+        let doneBtn = UIBarButtonItem(title: "Done", style: .done, target: self, action: #selector(doneBtnTapped))
+        
+        toolbar.setItems([flexspace, doneBtn], animated: true)
+        toolbar.sizeToFit()
+        
+        searchBar.inputAccessoryView = toolbar
+    }
+    
+    @objc func doneBtnTapped() {
+        view.endEditing(true)
+        
+        let zipcode = searchBar.text
+        
+        if let enteredText = zipcode {
+            if validateZipcode(input: enteredText) {
+                goToSearchedLocation(zipcode: enteredText)
+                
+            }
+            else {
+                // incorrect zipcode
+            }
+        }
+        else {
+            // empty
+        }
+    }
+    
+    func validateZipcode(input: String) -> Bool {
+        return NSPredicate(format: "SELF MATCHES %@", "^[0-9]{5}(-[0-9]{4})?$").evaluate(with: input.uppercased())
     }
     
     func determineCurrentLocation() {
         locationManager = CLLocationManager()
         locationManager.delegate = self
-        locationManager.desiredAccuracy = kCLLocationAccuracyBest
         locationManager.requestAlwaysAuthorization()
         
-        if CLLocationManager.locationServicesEnabled() {
-            locationManager.startUpdatingLocation()
+        locationManager.requestLocation()
+        
+    }
+    
+    func goToSearchedLocation(zipcode: String) {
+        CLGeocoder().geocodeAddressString(zipcode) { [weak self] (placemarks, error) in
+            if let error = error {
+                // unable to get location
+                print("Unable to get location: \(error)")
+            }
+            
+            if let placemarks = placemarks {
+                guard let location = placemarks.first?.location else {
+                    print("invalid zipcode")
+                    return
+                }
+                
+                self?.mapView.centerToLocation(CLLocation(latitude: location.coordinate.latitude, longitude: location.coordinate.longitude))
+                print("coordinates: -> \(location.coordinate.latitude), \(location.coordinate.longitude)")
+            }
         }
     }
     
@@ -83,6 +137,13 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate {
         
         let location = CLLocation(latitude: userLocation.coordinate.latitude, longitude: userLocation.coordinate.longitude)
         mapView.centerToLocation(location)
+        
+        let currentLocation = Location(title: "Current Location", coordinate: CLLocationCoordinate2D(latitude: userLocation.coordinate.latitude, longitude: userLocation.coordinate.longitude))
+        mapView.addAnnotation(currentLocation)
+    }
+    
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        // handle failure
     }
 
 }
