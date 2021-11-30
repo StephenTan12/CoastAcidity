@@ -7,6 +7,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate {
     var mapView: MKMapView!
     var locationManager: CLLocationManager!
     var locationName: String!
+    var isAcidic: String = ""
     var chosenOcean: Location!
     var currentLocation: Location!
     let oceanCoordinates = [Location(title: "Pacific Ocean", coordinate: CLLocationCoordinate2D(latitude: 35.7832, longitude: -124.5085)), Location(title: "Atlantic Ocean", coordinate: CLLocationCoordinate2D(latitude: 34.599413, longitude: -69))]
@@ -164,7 +165,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate {
     }
     
     func showLocationAlert(ocean: String) {
-        let alert = UIAlertController(title: "Updated Location", message: "Closest Ocean is the \(ocean)", preferredStyle: .alert)
+        let alert = UIAlertController(title: "Updated Location", message: "Coastal water near \(locationName!) are \(isAcidic)acidic!", preferredStyle: .alert)
         let moreAction = UIAlertAction(title: "More Detail", style: .default) { [weak self] alert in
             let vc = LocationDetailViewController()
             vc.originLocation = self?.currentLocation
