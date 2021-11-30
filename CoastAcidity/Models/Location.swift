@@ -1,10 +1,3 @@
-//
-//  Location.swift
-//  CoastAcidity
-//
-//  Created by Stephen Tan on 11/28/21.
-//
-
 import Foundation
 import MapKit
 

@@ -1,10 +1,3 @@
-//
-//  SceneDelegate.swift
-//  CoastAcidity
-//
-//  Created by Stephen Tan on 11/27/21.
-//
-
 import UIKit
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {

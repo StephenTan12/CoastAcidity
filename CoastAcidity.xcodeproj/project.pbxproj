@@ -14,6 +14,7 @@
 		E45F946D27530DED007D62EC /* HomeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E45F946C27530DED007D62EC /* HomeViewController.swift */; };
 		E45F947127531793007D62EC /* MapKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E45F947027531793007D62EC /* MapKit.framework */; };
 		E45F9473275448DF007D62EC /* Location.swift in Sources */ = {isa = PBXBuildFile; fileRef = E45F9472275448DF007D62EC /* Location.swift */; };
+		E45F947627559933007D62EC /* LocationDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E45F947527559933007D62EC /* LocationDetailViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -26,6 +27,7 @@
 		E45F946C27530DED007D62EC /* HomeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewController.swift; sourceTree = "<group>"; };
 		E45F947027531793007D62EC /* MapKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MapKit.framework; path = System/Library/Frameworks/MapKit.framework; sourceTree = SDKROOT; };
 		E45F9472275448DF007D62EC /* Location.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Location.swift; sourceTree = "<group>"; };
+		E45F947527559933007D62EC /* LocationDetailViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationDetailViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -75,6 +77,7 @@
 			isa = PBXGroup;
 			children = (
 				E45F946C27530DED007D62EC /* HomeViewController.swift */,
+				E45F947527559933007D62EC /* LocationDetailViewController.swift */,
 			);
 			path = Controllers;
 			sourceTree = "<group>";
@@ -169,6 +172,7 @@
 				E45F945B27530D49007D62EC /* SceneDelegate.swift in Sources */,
 				E45F9473275448DF007D62EC /* Location.swift in Sources */,
 				E45F946D27530DED007D62EC /* HomeViewController.swift in Sources */,
+				E45F947627559933007D62EC /* LocationDetailViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

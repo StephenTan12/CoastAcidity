@@ -1,10 +1,3 @@
-//
-//  HomeViewController.swift
-//  CoastAcidity
-//
-//  Created by Stephen Tan on 11/27/21.
-//
-
 import UIKit
 import MapKit
 import CoreLocation
@@ -13,19 +6,10 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate {
     var searchBar: UISearchBar!
     var mapView: MKMapView!
     var locationManager: CLLocationManager!
-    
-    func loadNavigationBar() {
-        title = "home"
-        navigationController?.navigationBar.isHidden = false
-        
-        let appearance = UINavigationBarAppearance()
-        appearance.configureWithOpaqueBackground()
-        appearance.backgroundColor = .lightGray
-        appearance.titleTextAttributes = [.font: UIFont.boldSystemFont(ofSize: 20.0), .foregroundColor: UIColor.black]
-        
-        navigationController?.navigationBar.standardAppearance = appearance
-        navigationController?.navigationBar.scrollEdgeAppearance = appearance
-    }
+    var locationName: String!
+    var chosenOcean: Location!
+    var currentLocation: Location!
+    let oceanCoordinates = [Location(title: "Pacific Ocean", coordinate: CLLocationCoordinate2D(latitude: 35.7832, longitude: -124.5085)), Location(title: "Atlantic Ocean", coordinate: CLLocationCoordinate2D(latitude: 34.599413, longitude: -69))]
     
     override func loadView() {
         let view = UIView()
@@ -44,6 +28,7 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate {
         mapView.mapType = MKMapType.standard
         mapView.isZoomEnabled = true
         mapView.isScrollEnabled = true
+        mapView.isRotateEnabled = false
         view.addSubview(mapView)
         
         NSLayoutConstraint.activate([
@@ -68,6 +53,10 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate {
         
         setupSearchBar()
         determineCurrentLocation()
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        navigationController?.navigationBar.isHidden = true
     }
     
     func setupSearchBar() {
@@ -107,10 +96,9 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate {
     func determineCurrentLocation() {
         locationManager = CLLocationManager()
         locationManager.delegate = self
-        locationManager.requestAlwaysAuthorization()
-        
+        locationManager.requestWhenInUseAuthorization()
         locationManager.requestLocation()
-        
+        locationManager.startUpdatingLocation()
     }
     
     func goToSearchedLocation(zipcode: String) {
@@ -125,31 +113,100 @@ class HomeViewController: UIViewController, CLLocationManagerDelegate {
                     print("invalid zipcode")
                     return
                 }
-                
-                self?.mapView.centerToLocation(CLLocation(latitude: location.coordinate.latitude, longitude: location.coordinate.longitude))
-                print("coordinates: -> \(location.coordinate.latitude), \(location.coordinate.longitude)")
+                let place = CLLocation(latitude: location.coordinate.latitude, longitude: location.coordinate.longitude)
+                self?.updateAnnotation(coordinates: place)
             }
         }
+    }
+    
+    func getLocationDetails(coordinates: CLLocation) {
+        CLGeocoder().reverseGeocodeLocation(coordinates) { [weak self] (placemarks, error) in
+            if let error = error {
+                print("Unable to fetch placemark: \(error)")
+            }
+            
+            if let placemarks = placemarks {
+                guard let cityName = placemarks.first?.locality else {
+                    print("placemark messed up")
+                    return
+                }
+                
+                self?.locationName = cityName
+            }
+        }
+    }
+    
+    func updateAnnotation(coordinates: CLLocation) {
+        mapView.removeAnnotations(mapView.annotations)
+        
+        getLocationDetails(coordinates: coordinates)
+        currentLocation = Location(title: "Current Location", coordinate: CLLocationCoordinate2D(latitude: coordinates.coordinate.latitude, longitude: coordinates.coordinate.longitude))
+        
+        mapView.addAnnotation(currentLocation)
+        
+        let pacificOceanLocation = CLLocation(latitude: oceanCoordinates[0].coordinate.latitude, longitude: oceanCoordinates[0].coordinate.longitude)
+        let atlanticOceanLocation = CLLocation(latitude: oceanCoordinates[1].coordinate.latitude, longitude: oceanCoordinates[1].coordinate.longitude)
+        
+        print(coordinates.distance(from: atlanticOceanLocation)/1000)
+        if coordinates.distance(from: pacificOceanLocation) > coordinates.distance(from: atlanticOceanLocation) {
+            chosenOcean = oceanCoordinates[1]
+        }
+        else {
+            chosenOcean = oceanCoordinates[0]
+        }
+        
+        mapView.addAnnotation(chosenOcean)
+        mapView.fitAll()
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+            self?.showLocationAlert(ocean: (self?.chosenOcean.title)!)
+        }
+    }
+    
+    func showLocationAlert(ocean: String) {
+        let alert = UIAlertController(title: "Updated Location", message: "Closest Ocean is the \(ocean)", preferredStyle: .alert)
+        let moreAction = UIAlertAction(title: "More Detail", style: .default) { [weak self] alert in
+            let vc = LocationDetailViewController()
+            vc.originLocation = self?.currentLocation
+            vc.oceanLocation = self?.chosenOcean
+            vc.locationName = self?.locationName
+            
+            self?.navigationController?.pushViewController(vc, animated: true)
+        }
+        
+        let okAction = UIAlertAction(title: "Ok", style: .default)
+        alert.addAction(okAction)
+        alert.addAction(moreAction)
+        present(alert, animated: true)
     }
     
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         let userLocation:CLLocation = locations[0] as CLLocation
         
         let location = CLLocation(latitude: userLocation.coordinate.latitude, longitude: userLocation.coordinate.longitude)
-        mapView.centerToLocation(location)
-        
-        let currentLocation = Location(title: "Current Location", coordinate: CLLocationCoordinate2D(latitude: userLocation.coordinate.latitude, longitude: userLocation.coordinate.longitude))
-        mapView.addAnnotation(currentLocation)
+        updateAnnotation(coordinates: location)
+        manager.stopUpdatingLocation()
     }
     
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         // handle failure
     }
-
 }
+
 private extension MKMapView {
     func centerToLocation(_ location: CLLocation, regionRadius: CLLocationDistance = 1000) {
         let coordinateRegion = MKCoordinateRegion(center: location.coordinate, latitudinalMeters: regionRadius, longitudinalMeters: regionRadius)
         setRegion(coordinateRegion, animated: true)
+    }
+    
+    func fitAll() {
+        var zoomRect = MKMapRect.null;
+        for annotation in annotations {
+            let annotationPoint = MKMapPoint(annotation.coordinate)
+            let pointRect = MKMapRect(x: annotationPoint.x, y: annotationPoint.y, width: 0.01, height: 0.01)
+            zoomRect = zoomRect.union(pointRect)
+        }
+        
+        setVisibleMapRect(zoomRect, edgePadding: UIEdgeInsets(top: 100, left: 100, bottom: 100, right: 100), animated: true)
     }
 }
